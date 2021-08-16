@@ -23,13 +23,13 @@ namespace QandA.Data
         AnswerGetResponse GetAnswer(int answerId);
 
         QuestionGetSingleResponse
-            PostQuestion(QuestionPostRequest question);
+            PostQuestion(QuestionPostFullRequest question);
 
         QuestionGetSingleResponse
             PutQuestion(int questionId, QuestionPutRequest question);
 
         void DeleteQuestion(int questionId);
 
-        AnswerGetResponse PostAnswer(AnswerPostRequest answer);
+        AnswerGetResponse PostAnswer(AnswerPostFullRequest answer);
     }
 }
