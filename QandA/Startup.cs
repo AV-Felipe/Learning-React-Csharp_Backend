@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DbUp;
 
 namespace QandA
 {
@@ -26,6 +27,18 @@ namespace QandA
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            EnsureDatabase.For.SqlDatabase(connectionString); //DbUp: caso o database referido pela conection string não exista, esse será criado
+
+            //Aqui estmos comparando o banco de dados com os códigos SQL salvos em nosso projeto
+            var upgrader = DeployChanges.To.SqlDatabase(connectionString, null).WithScriptsEmbeddedInAssembly(
+                System.Reflection.Assembly.GetExecutingAssembly()).WithTransaction().Build();
+            //caso hajam diferenças entre o código ímbuído no projeto e o banco de dados, o código é implementado
+            if (upgrader.IsUpgradeRequired())
+            {
+                upgrader.PerformUpgrade();
+            }
 
             services.AddControllers();
             services.AddSwaggerGen(c =>
