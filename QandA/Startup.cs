@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DbUp;
+using QandA.Data;
 
 namespace QandA
 {
@@ -45,6 +46,11 @@ namespace QandA
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "QandA", Version = "v1" });
             });
+
+            //ralacionado com o uso do db por injeção de dependência,
+            //sempre que IDataRpository for referido em um construtor, será criada, caso já não exista,
+            //uma instância do DataRepository
+            services.AddScoped<IDataRepository, DataRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

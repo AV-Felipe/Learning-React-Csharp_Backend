@@ -19,7 +19,7 @@ namespace QandA.Data
         //entre colchetes passamos os campos de onde queremos obter a informação, separando os níveis por : (colons)
         public DataRepository (IConfiguration configuration)
         {
-            _connectionString = configuration["ConnectionString:DefaultConnection"];
+            _connectionString = configuration["ConnectionStrings:DefaultConnection"];
         }
 
         public AnswerGetResponse GetAnswer(int answerId)
