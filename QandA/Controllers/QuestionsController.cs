@@ -28,11 +28,19 @@ namespace QandA.Controllers
         //Action methods
 
         [HttpGet]
-        public IEnumerable<QuestionGetManyResponse> GetQuestions(string search)
+        public IEnumerable<QuestionGetManyResponse> GetQuestions(string search, bool includeAnswers)
         {
             if (string.IsNullOrEmpty(search))
             {
-                return _dataRepository.GetQuestions();
+                if (includeAnswers)
+                {
+                    return _dataRepository.GetQuestionsWithAnswers();
+                }
+                else
+                {
+                    return _dataRepository.GetQuestions();
+                }
+                
             }
             else
             {
@@ -41,8 +49,8 @@ namespace QandA.Controllers
 
         }
 
-        [HttpGet ("{questionId}")]//aqui o método get espera um parâmetro passado no subpath da url, no caso um id
-        public ActionResult<QuestionGetSingleResponse> GetQuestion(int questionId)
+        [HttpGet ("{questionId}")]//aqui o método get espera um parâmetro passado no caminho da url, no caso um id
+        public ActionResult<QuestionGetSingleResponse> GetQuestion(int questionId)//o id da urrl é o parâmetro aqui
         {
             var question = _dataRepository.GetQuestion(questionId);
             if (question == null)

@@ -52,6 +52,22 @@ namespace QandA.Data
             }
         }
 
+        public IEnumerable<QuestionGetManyResponse> GetQuestionsWithAnswers()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+
+                var questions = connection.Query<QuestionGetManyResponse>("EXEC dbo.Question_GetMany");
+                foreach (var question in questions)//exemplo de N+1 trap, para cada resposta teremos uma nova chamada ao banco de dados
+                {
+                    question.Answers = connection.Query<AnswerGetResponse>(@"EXEC dbo.Answer_Get_ByQuestionId @QuestionId = @QuestionId",
+                        new { QuestionId = question.QuestionId }).ToList();
+                }
+                return questions;
+            }
+        }
+
         public IEnumerable<QuestionGetManyResponse> GetQuestions()
         {
             //pelo uso do bloco de código using, dentro do escopo de um método, temos um objeto
