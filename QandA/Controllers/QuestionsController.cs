@@ -60,6 +60,12 @@ namespace QandA.Controllers
             return question;
         }
 
+        [HttpGet ("unanswered")]
+        public IEnumerable<QuestionGetManyResponse> GetUnansweredQuestions()
+        {
+            return _dataRepository.GetUnansweredQuestions();
+        }
+
         [HttpPost]
         public ActionResult<QuestionGetSingleResponse> PostQuestion(QuestionPostRequest questionPostRequest)
         {
