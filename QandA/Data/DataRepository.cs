@@ -41,9 +41,8 @@ namespace QandA.Data
                 connection.Open();
                 //query multiple: https://dapper-tutorial.net/querymultiple
                 using (GridReader results = connection.QueryMultiple(@"EXEC dbo.Question_GetSingle @QuestionId = @QuestionId;
-                EXEC dbo.Answer_Get_ByQuestionId @QuestionId = @QuestionId", new { QuestionId = questionId}
-                                                                     )
-                    )
+                EXEC dbo.Answer_Get_ByQuestionId @QuestionId = @QuestionId", new { QuestionId = questionId})
+                )
                 {
                     var question = results.Read<QuestionGetSingleResponse>().FirstOrDefault();
                     if (question != null)
@@ -106,6 +105,21 @@ namespace QandA.Data
                 return connection.Query<QuestionGetManyResponse>(
                     @"EXEC dbo.Question_GetMany_BySearch @Search = @Search",
                     new { Search = search }); //aqui utilizamos um objeto anônimo (pelo new sem a declaração de um nome nem um tipo de variável). Por esse objeto passamos o valor de um parâmetro para o Dapper.
+            }
+        }
+
+        public IEnumerable<QuestionGetManyResponse> GetQuestionsBySearchWithPaging(string search, int pageNumber, int pageSize)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                var parameters = new
+                {
+                    Search = search,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+                return connection.Query<QuestionGetManyResponse>(@"EXEC dbo.Question_GetMany_BySearch_WithPaging @Search = @Search, @PageNumber = @PageNumber, @PageSize = @PageSize", parameters);
             }
         }
 

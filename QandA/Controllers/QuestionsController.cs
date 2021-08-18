@@ -28,7 +28,7 @@ namespace QandA.Controllers
         //Action methods
 
         [HttpGet]
-        public IEnumerable<QuestionGetManyResponse> GetQuestions(string search, bool includeAnswers)
+        public IEnumerable<QuestionGetManyResponse> GetQuestions(string search, bool includeAnswers, int page=1, int pageSize=20) //o valor de search virá da query, na url (query parameters com o mesmo nome dos parâmetros dos action methods são automaticamente mapeados para o parâmetro do action method
         {
             if (string.IsNullOrEmpty(search))
             {
@@ -44,7 +44,7 @@ namespace QandA.Controllers
             }
             else
             {
-                return _dataRepository.GetQuestionsBySearch(search);
+                return _dataRepository.GetQuestionsBySearchWithPaging(search, page, pageSize);
             }
 
         }
