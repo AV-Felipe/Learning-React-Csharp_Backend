@@ -23,6 +23,8 @@ namespace QandA.Data
         IEnumerable<QuestionGetManyResponse>
             GetUnansweredQuestions();
 
+        Task<IEnumerable<QuestionGetManyResponse>> GetUnansweredQuestionsAsync();
+
         QuestionGetSingleResponse
             GetQuestion(int questionId);
 

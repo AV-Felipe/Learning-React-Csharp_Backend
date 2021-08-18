@@ -133,6 +133,15 @@ namespace QandA.Data
             }
         }
 
+        public async Task<IEnumerable<QuestionGetManyResponse>> GetUnansweredQuestionsAsync()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                return await connection.QueryAsync<QuestionGetManyResponse>("EXEC dbo.Question_GetUnanswered");
+            }
+        }
+
         public bool QuestionExists(int questionId)
         {
             using (var connection = new SqlConnection(_connectionString))
