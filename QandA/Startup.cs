@@ -51,6 +51,11 @@ namespace QandA
             //sempre que IDataRpository for referido em um construtor, será criada, caso já não exista,
             //uma instância do DataRepository
             services.AddScoped<IDataRepository, DataRepository>();
+
+            //disponibilizando o cache de perguntas para uso com DI
+            //instanciado como singleton, de forma que diferentes requisições acessem a mesma instância
+            services.AddMemoryCache();
+            services.AddSingleton<IQuestionCache, QuestionCache>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

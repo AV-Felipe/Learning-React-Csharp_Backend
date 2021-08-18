@@ -19,10 +19,12 @@ namespace QandA.Controllers
         //Diferentemente do IConfiguration, o IDataRepository precisa ser vinculado com a classe
         //do repositório no Startup.cs para que essa injeção funcione
         private readonly IDataRepository _dataRepository;
+        private readonly IQuestionCache _cache;
 
-        public QuestionsController(IDataRepository dataRepository)
+        public QuestionsController(IDataRepository dataRepository, IQuestionCache questionCache)
         {
             _dataRepository = dataRepository;
+            _cache = questionCache;
         }
 
         //Action methods
@@ -50,12 +52,18 @@ namespace QandA.Controllers
         }
 
         [HttpGet ("{questionId}")]//aqui o método get espera um parâmetro passado no caminho da url, no caso um id
-        public ActionResult<QuestionGetSingleResponse> GetQuestion(int questionId)//o id da urrl é o parâmetro aqui
+        public ActionResult<QuestionGetSingleResponse> GetQuestion(int questionId)//o id da url é o parâmetro aqui
         {
-            var question = _dataRepository.GetQuestion(questionId);
+            //aqui estamos primeiro buscando a questão no cache, se ela não estiver lá, buscamos no servidor e a colocamos no cache
+            var question = _cache.Get(questionId);
             if (question == null)
             {
-                return NotFound();
+                question = _dataRepository.GetQuestion(questionId);
+                if (question == null)
+                {
+                    return NotFound();
+                }
+                _cache.Set(question);
             }
             return question;
         }
@@ -95,6 +103,7 @@ namespace QandA.Controllers
                 question.Content :
                 questionPutRequest.Content;
             var savedQuestion = _dataRepository.PutQuestion(questionId, questionPutRequest);
+            _cache.Remove(savedQuestion.QuestionId);//remove a instância anterior existente no cache
             return savedQuestion;
         }
 
@@ -107,6 +116,7 @@ namespace QandA.Controllers
                 return NotFound();
             }
             _dataRepository.DeleteQuestion(questionId);
+            _cache.Remove(questionId);//remove a instância anterior existente no cache
             return NoContent();
         }
 
@@ -126,6 +136,7 @@ namespace QandA.Controllers
                 UserName = "felipe@supimpa.com",
                 Created = DateTime.UtcNow
             });
+            _cache.Remove(answerPostRequest.QuestionId.Value);//remove a instância anterior existente no cache
             return savedAnswer;
         }
         
