@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 using DbUp;
 using QandA.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
+using QandA.Authorization;
 
 namespace QandA
 {
@@ -68,6 +71,15 @@ namespace QandA
                 options.Authority = Configuration["Auth0:Authority"];
                 options.Audience = Configuration["Auth0:Audience"];
             });
+
+            //disponibiliza o cliente http para podermos chamar o web service do auth0
+            services.AddHttpClient();
+            //adiciona nossa política de autorização
+            services.AddAuthorization(options => options.AddPolicy("MustBeQuestionAuthor", policy => policy.Requirements.Add(new MustBeQuestionAuthorRequirement())));
+            //registro do handler para nossas requisições, para ser usado por injeção de dependência
+            services.AddScoped<IAuthorizationHandler, MustBeQuestionAuthorHandler>();
+            //registro do http context accessor para ser usado por injeção de dependencia e possibilitar a classe de verificação (MustBeQuestionAuthor) acessar os pedidos http para verificar a questão que está sendo requerida
+            services.AddHttpContextAccessor(); //equivale a AddSingleton<IHttpContextAccessor, HttpContextAccessor>
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
