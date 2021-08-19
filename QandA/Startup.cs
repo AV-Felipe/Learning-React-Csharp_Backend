@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DbUp;
 using QandA.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace QandA
 {
@@ -56,6 +57,17 @@ namespace QandA
             //instanciado como singleton, de forma que diferentes requisições acessem a mesma instância
             services.AddMemoryCache();
             services.AddSingleton<IQuestionCache, QuestionCache>();
+
+            //adiciona autenticação JWT-based especificando a autoridade e audiência conforme o appsettings.json
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            {
+                options.Authority = Configuration["Auth0:Authority"];
+                options.Audience = Configuration["Auth0:Audience"];
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -69,11 +81,13 @@ namespace QandA
             }
             else
             {
-                app.UseHttpsRedirection(); //não queremos esse midleware no modo de desenvolvimento, usaremos http no front e no back no modo de desenvolvimento - o firefox pode apresentar problemas se o backend estiver com https e o front http (protocolos distintos)
+                app.UseHttpsRedirection(); //não queremos esse middleware no modo de desenvolvimento, usaremos http no front e no back no modo de desenvolvimento - o firefox pode apresentar problemas se o backend estiver com https e o front http (protocolos distintos)
             }
 
 
             app.UseRouting();
+
+            app.UseAuthentication(); //middleware Microsoft.AspNetCore.Authentication.JwtBearer
 
             app.UseAuthorization();
 
