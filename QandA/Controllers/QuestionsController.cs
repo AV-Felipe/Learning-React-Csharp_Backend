@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 using QandA.Data;
 using QandA.Data.Models;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace QandA.Controllers
 {
@@ -31,35 +35,35 @@ namespace QandA.Controllers
         //Action methods
 
         [HttpGet]
-        public IEnumerable<QuestionGetManyResponse> GetQuestions(string search, bool includeAnswers, int page=1, int pageSize=20) //o valor de search virá da query, na url (query parameters com o mesmo nome dos parâmetros dos action methods são automaticamente mapeados para o parâmetro do action method
+        public async Task<IEnumerable<QuestionGetManyResponse>> GetQuestions(string search, bool includeAnswers, int page=1, int pageSize=20) //o valor de search virá da query, na url (query parameters com o mesmo nome dos parâmetros dos action methods são automaticamente mapeados para o parâmetro do action method
         {
             if (string.IsNullOrEmpty(search))
             {
                 if (includeAnswers)
                 {
-                    return _dataRepository.GetQuestionsWithAnswers();
+                    return await _dataRepository.GetQuestionsWithAnswers();
                 }
                 else
                 {
-                    return _dataRepository.GetQuestions();
+                    return await _dataRepository.GetQuestions();
                 }
                 
             }
             else
             {
-                return _dataRepository.GetQuestionsBySearchWithPaging(search, page, pageSize);
+                return await _dataRepository.GetQuestionsBySearchWithPaging(search, page, pageSize);
             }
 
         }
 
         [HttpGet ("{questionId}")]//aqui o método get espera um parâmetro passado no caminho da url, no caso um id
-        public ActionResult<QuestionGetSingleResponse> GetQuestion(int questionId)//o id da url é o parâmetro aqui
+        public async Task<ActionResult<QuestionGetSingleResponse>> GetQuestion(int questionId)//o id da url é o parâmetro aqui
         {
             //aqui estamos primeiro buscando a questão no cache, se ela não estiver lá, buscamos no servidor e a colocamos no cache
             var question = _cache.Get(questionId);
             if (question == null)
             {
-                question = _dataRepository.GetQuestion(questionId);
+                question = await _dataRepository.GetQuestion(questionId);
                 if (question == null)
                 {
                     return NotFound();
@@ -72,14 +76,14 @@ namespace QandA.Controllers
         [HttpGet ("unanswered")]
         public async Task<IEnumerable<QuestionGetManyResponse>> GetUnansweredQuestions()
         {
-            return await _dataRepository.GetUnansweredQuestionsAsync();
+            return await _dataRepository.GetUnansweredQuestions();
         }
 
         [Authorize]
         [HttpPost]
-        public ActionResult<QuestionGetSingleResponse> PostQuestion(QuestionPostRequest questionPostRequest)
+        public async Task<ActionResult<QuestionGetSingleResponse>> PostQuestion(QuestionPostRequest questionPostRequest)
         {
-            var savedQuestion = _dataRepository.PostQuestion(new QuestionPostFullRequest
+            var savedQuestion = await _dataRepository.PostQuestion(new QuestionPostFullRequest
             {
                 Title = questionPostRequest.Title,
                 Content = questionPostRequest.Content,
@@ -92,9 +96,9 @@ namespace QandA.Controllers
 
         [Authorize(Policy = "MustBeQuestionAuthor")]
         [HttpPut ("{questionId}")]
-        public ActionResult<QuestionGetSingleResponse> PutQuestion (int questionId, QuestionPutRequest questionPutRequest)
+        public async Task<ActionResult<QuestionGetSingleResponse>> PutQuestion (int questionId, QuestionPutRequest questionPutRequest)
         {
-            var question = _dataRepository.GetQuestion(questionId);
+            var question = await _dataRepository.GetQuestion(questionId);
             if(question == null)
             {
                 return NotFound();
@@ -105,35 +109,35 @@ namespace QandA.Controllers
             questionPutRequest.Content = string.IsNullOrEmpty(questionPutRequest.Content) ?
                 question.Content :
                 questionPutRequest.Content;
-            var savedQuestion = _dataRepository.PutQuestion(questionId, questionPutRequest);
+            var savedQuestion = await _dataRepository.PutQuestion(questionId, questionPutRequest);
             _cache.Remove(savedQuestion.QuestionId);//remove a instância anterior existente no cache
             return savedQuestion;
         }
 
         [Authorize (Policy = "MustBeQuestionAuthor")]
         [HttpDelete ("{questionId}")]
-        public ActionResult DeleteQuestion(int questionId)
+        public async Task<ActionResult> DeleteQuestion(int questionId)
         {
-            var question = _dataRepository.GetQuestion(questionId);
+            var question = await _dataRepository.GetQuestion(questionId);
             if(question == null)
             {
                 return NotFound();
             }
-            _dataRepository.DeleteQuestion(questionId);
+            await _dataRepository.DeleteQuestion(questionId);
             _cache.Remove(questionId);//remove a instância anterior existente no cache
             return NoContent();
         }
 
         [Authorize]
         [HttpPost ("answer")]
-        public ActionResult<AnswerGetResponse> PostAnswer(AnswerPostRequest answerPostRequest)
+        public async Task<ActionResult<AnswerGetResponse>> PostAnswer(AnswerPostRequest answerPostRequest)
         {
-            var questionExists = _dataRepository.QuestionExists(answerPostRequest.QuestionId.Value);
+            var questionExists = await _dataRepository.QuestionExists(answerPostRequest.QuestionId.Value);
             if (!questionExists)
             {
                 return NotFound();
             }
-            var savedAnswer = _dataRepository.PostAnswer(new AnswerPostFullRequest
+            var savedAnswer = await _dataRepository.PostAnswer(new AnswerPostFullRequest
             { 
                 QuestionId = answerPostRequest.QuestionId.Value,
                 Content = answerPostRequest.Content,
