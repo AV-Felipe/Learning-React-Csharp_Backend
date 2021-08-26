@@ -80,6 +80,12 @@ namespace QandA
             services.AddScoped<IAuthorizationHandler, MustBeQuestionAuthorHandler>();
             //registro do http context accessor para ser usado por injeção de dependencia e possibilitar a classe de verificação (MustBeQuestionAuthor) acessar os pedidos http para verificar a questão que está sendo requerida
             services.AddHttpContextAccessor(); //equivale a AddSingleton<IHttpContextAccessor, HttpContextAccessor>
+
+            //define uma política de CORS (Cross-Origin Resource Sharing) que permite à origins especificadas no apsettings.json o acesso da API
+            services.AddCors(options => options.AddPolicy("CorsPolicy", builder => builder
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .WithOrigins(Configuration["Frontend"])));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -98,6 +104,8 @@ namespace QandA
 
 
             app.UseRouting();
+
+            app.UseCors("CorsPolicy");
 
             app.UseAuthentication(); //middleware Microsoft.AspNetCore.Authentication.JwtBearer
 
