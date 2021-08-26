@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using System.Net.Http;
 using System.Text.Json;
 
+
 namespace QandA.Controllers
 {
     [Route("api/[controller]")]//como nosso contoller se chama QuestionsController, [controller] será substituído por questions (nome do controller menos a palavra controller)
@@ -25,11 +26,15 @@ namespace QandA.Controllers
         //do repositório no Startup.cs para que essa injeção funcione
         private readonly IDataRepository _dataRepository;
         private readonly IQuestionCache _cache;
+        private readonly IHttpClientFactory _clientFactory;
+        private readonly string _auth0UserInfo;
 
-        public QuestionsController(IDataRepository dataRepository, IQuestionCache questionCache)
+        public QuestionsController(IDataRepository dataRepository, IQuestionCache questionCache, IHttpClientFactory clientFactory, IConfiguration configuration)
         {
             _dataRepository = dataRepository;
             _cache = questionCache;
+            _clientFactory = clientFactory;
+            _auth0UserInfo = $"{ configuration["Auth0:Authority"]}userinfo";
         }
 
         //Action methods
@@ -87,8 +92,8 @@ namespace QandA.Controllers
             {
                 Title = questionPostRequest.Title,
                 Content = questionPostRequest.Content,
-                UserId = "1",
-                UserName = "felipe@supimpa.com",
+                UserId = User.FindFirst(ClaimTypes.NameIdentifier).Value,
+                UserName = await GetUserName(),
                 Created = DateTime.UtcNow
             });
             return CreatedAtAction(nameof(GetQuestion), new { questionId = savedQuestion.QuestionId }, savedQuestion);
@@ -141,12 +146,35 @@ namespace QandA.Controllers
             { 
                 QuestionId = answerPostRequest.QuestionId.Value,
                 Content = answerPostRequest.Content,
-                UserId = "1",
-                UserName = "felipe@supimpa.com",
+                UserId = User.FindFirst(ClaimTypes.NameIdentifier).Value,
+                UserName = await GetUserName(),
                 Created = DateTime.UtcNow
             });
             _cache.Remove(answerPostRequest.QuestionId.Value);//remove a instância anterior existente no cache
             return savedAnswer;
+        }
+
+        private async Task<string> GetUserName()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, _auth0UserInfo);
+            request.Headers.Add("Authorization", Request.Headers["Authorization"].First());
+
+            var client = _clientFactory.CreateClient();
+            var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var user = JsonSerializer.Deserialize<User>(jsonContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                return user.Name;
+            }
+            else
+            {
+                return "";
+            }
         }
         
     }
