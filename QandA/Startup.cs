@@ -107,6 +107,7 @@ namespace QandA
 
             app.UseCors("CorsPolicy");
 
+            //é importante que tanto o use authentication quanto o authorization estejam antes do endpoints, de outra forna os endopoints protegidos nunca receberam as políticas de usuário, ficando inacessíveis mesmo para requests com um token válido
             app.UseAuthentication(); //middleware Microsoft.AspNetCore.Authentication.JwtBearer
 
             app.UseAuthorization();
